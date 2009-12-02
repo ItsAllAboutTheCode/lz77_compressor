@@ -41,56 +41,55 @@ size - Number of bytes from offset to compress or uncompress
 
 void lz77DlgApp::run(std::string inputfile,std::string outputfile,int in_offset,int out_offset,int size,int option )
 {
-	std::string message="";
+	wxString message;
 	int filesize;
 	ifstream ifile;
 	ofstream ofile;
 	
-	try
-	{
-		ifile.exceptions(ifstream::failbit);
-
-		ifile.open(inputfile.c_str(),ios_base::binary);
 	
-	}
-	catch (ifstream::failure error)
+	ifile.open(inputfile.c_str(),ios_base::binary);
+		
+	if(!ifile)
 	{
-		wxMessageBox("Error opening input file\nfile may be in use by another program or may not exist","Results");
+		wxMessageBox(wxT("Error opening input file\nfile may be in use by another program or may not exist"),wxT("Results"));
 		return;
 	}
 	
 	ifile.seekg(0,ios::end);
 	filesize=ifile.tellg();
 	ifile.seekg(0,ios::beg);
+	
 	if(filesize<in_offset)
 	{
-		wxMessageBox("Offset is bigger than the size of the file","Results");
+		wxMessageBox(wxT("Offset is bigger than the size of the file"),wxT("Results"));
 		ifile.close();
 		return;
 	}
-	if(filesize<in_offset+size)
+	else if(filesize<size)
 	{
-		wxMessageBox("Offset + size to compress is bigger than the total size of the file","Results");
+		wxMessageBox(wxT("Size to compress is bigger than the total size of the file"),wxT("Results"));
+		ifile.close();
+		return;
+	}
+	else if(filesize<in_offset+size)
+	{
+		wxMessageBox(wxT("Offset + size to compress is bigger than the total size of the file"),wxT("Results"));
 		ifile.close();
 		return;
 	}
 	
-	if(size==0)
+	if(size<=0 || size>(filesize-in_offset))
 	{
 		size=filesize-in_offset;
 	}
 
-	try
-	{
-		
-		ofile.exceptions(ofstream::failbit);
-
-		ofile.open(outputfile.c_str(),ios_base::binary);
 	
-	}
-	catch (ofstream::failure error)
+	ofile.open(outputfile.c_str(),ios_base::binary);
+	
+	
+	if(!ofile)
 	{
-		wxMessageBox("Error opening output file, file may be in use by another program","Results");
+		wxMessageBox(wxT("Error opening output file, file may be in use by another program"),wxT("Results"));
 		ifile.close();
 		return;
 	}
@@ -134,7 +133,7 @@ void lz77DlgApp::run(std::string inputfile,std::string outputfile,int in_offset,
 			}
 			else 
 			{
-				message="The data at input offset can not be uncompressed";
+				message=wxT("The data at input offset can not be uncompressed");
 			}
 			break;
 		}
@@ -142,9 +141,9 @@ void lz77DlgApp::run(std::string inputfile,std::string outputfile,int in_offset,
 	}
 
 	if (message.length()>0)
-		wxMessageBox(message,"Results");
+		wxMessageBox(message,wxT("Results"));
 	else
-		wxMessageBox("Finished","Results");
+		wxMessageBox(wxT("Finished"),wxT("Results"));
 
 	
 	ofile.close();

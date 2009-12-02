@@ -1,0 +1,55 @@
+Nintendo Wii LZ77 Compressor
+Author: 
+Derric McGarrah
+
+General Information:
+The LZ77 compressor is used for compression and decompression of Nintendo Wii and Gamecube..
+The compressor was only tested on *.cms and *.tpl files, but should work on All Files compressed using Nintendo 
+LZ77 compression. I think Nintendo has used the same algorithm for all their consoles, but I have not and will not
+test this compressor on other consoles.
+The LZ77 compression algortihm was adapted from Nintenlord's lz77 compressor who give
+full credit for his compress and Uncompress functions
+
+Updates and Revisions
+1.10 Made compression alogrithm faster. Fixed offset size box.
+1.00 Original Release
+
+How to use:
+
+	Compress:
+	When the compress Radio Button is checked The Input info and Output info box can be used
+	The Offset box accepts hex 0xdddd or decimal by not using the 0x prefix
+	The Size box accepts decimal digits.
+	
+	
+	The input offset box is the location to start compressing data -Default=0
+	The output offset is the location where to place compressed data- Default=0
+	The Size to compress is the amount of bytes form the input offset to look for and 
+	attempt to compress data - Default=Size of the input
+	
+	If no commands are given  the enitre file will be compressed
+	
+	Uncompress:
+	The Radio button for Uncompress uses only the offset boxes to uncompress data
+	The size box has no barring on uncompression at at all (This make since because the you
+	don't know the size of the uncompressed).
+	
+	The input offset box holds the location of where to look for compressed data: Default=0
+	The output offset holds the location of where to place uncompressed data: Default=0
+	
+	If a new or empty file is given the place before the output offset is padded with zeros
+	
+	If no commands are given the entire file will attempt to be de-compressed
+
+Compile: 
+This program was made to be multiplatform and therefore requires use of the WxWidgets-2.8.9 library
+to compile the source code. A makefile is included for compiling
+
+Copying: 
+You may use and modify the sources of this program for whatever purpose as long as it does not involde
+ malicious intent. I assume no responsibility for the results of any harm caused by the modification of these sources
+
+Credits:
+Nintenlord -  His source for his LZ77 compressor is mostly what makes up my compress and Uncompress functions
+Nintendo Wii Hackers - That homebrew Channel is preety damn amazing, and it shows what the community can do.
+Google - For leading me to so many useless implementations and LZ77 compressor, but it did lead me to Nintenlord compressor

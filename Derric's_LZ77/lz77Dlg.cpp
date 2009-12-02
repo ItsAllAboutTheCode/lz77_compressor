@@ -76,7 +76,15 @@ void lz77Dlg::CreateGUIControls()
 	SetIcon(wxNullIcon);
 	SetSize(8,8,444,336);
 	Center();
-	
+	wxArrayString includeList;
+	includeList.Alloc(14);
+	includeList.Add(wxT('0'));includeList.Add(wxT('1'));includeList.Add(wxT('2'));includeList.Add(wxT('3'));includeList.Add(wxT('4'));
+	includeList.Add(wxT('5'));includeList.Add(wxT('6'));includeList.Add(wxT('7'));includeList.Add(wxT('8'));includeList.Add(wxT('9'));
+	includeList.Add(wxT('a'));includeList.Add(wxT('b'));includeList.Add(wxT('c'));includeList.Add(wxT('d'));includeList.Add(wxT('e'));includeList.Add(wxT('f'));
+	includeList.Add(wxT('A'));includeList.Add(wxT('B'));includeList.Add(wxT('C'));includeList.Add(wxT('D'));includeList.Add(wxT('E'));includeList.Add(wxT('F'));
+	includeList.Add(wxT('$'));includeList.Add(wxT('%'));
+	wxTextValidator hexValidator(wxFILTER_INCLUDE_CHAR_LIST);
+	hexValidator.SetIncludes(includeList);
 
 	WxOpenFileDialog1 =  new wxFileDialog(this, wxT("Choose a file"), wxT(""), wxT(""), wxT("*.cms and tpl files(*.cms;*.tpl)|*.cms;*.tpl|All Files|*.*"), wxOPEN);
 
@@ -93,17 +101,17 @@ void lz77Dlg::CreateGUIControls()
 	WxRadioBox1 = new wxRadioBox(this, ID_WXRADIOBOX1, wxT("Options"), wxPoint(12, 11), wxSize(133, 72), arrayStringFor_WxRadioBox1, 1, wxRA_SPECIFY_COLS, wxDefaultValidator, wxT("WxRadioBox1"));
 	WxRadioBox1->SetSelection(0);
 
-	OutputOff = new wxTextCtrl(this, ID_OUTPUT_OFF, wxT(""), wxPoint(305, 208), wxSize(78, 19), wxTE_PROCESS_ENTER, wxDefaultValidator, wxT("OutputOff"));
+	OutputOff = new wxTextCtrl(this, ID_OUTPUT_OFF, wxT(""), wxPoint(304, 208), wxSize(78, 19), wxTE_PROCESS_ENTER, hexValidator, wxT("OutputOff"));
 
-	Size = new wxTextCtrl(this, ID_SIZE, wxT(""), wxPoint(304, 106), wxSize(80, 19), wxTE_PROCESS_ENTER, wxDefaultValidator, wxT("Size"));
-
+	Size = new wxTextCtrl(this, ID_SIZE, wxT(""), wxPoint(304, 106), wxSize(80, 19), wxTE_PROCESS_ENTER, wxTextValidator(wxFILTER_NUMERIC), wxT("Size"));
+	Size->SetMaxLength(10);
 	WxStaticBox1 = new wxStaticBox(this, ID_WXSTATICBOX1, wxT("Output file info"), wxPoint(288, 160), wxSize(112, 110));
 
 	BrowseButton2 = new wxButton(this, ID_BROWSEBUTTON2, wxT("Browse"), wxPoint(144, 164), wxSize(75, 25), 0, wxDefaultValidator, wxT("BrowseButton2"));
 
 	BrowseButton1 = new wxButton(this, ID_BROWSEBUTTON1, wxT("Browse"), wxPoint(142, 113), wxSize(75, 25), 0, wxDefaultValidator, wxT("BrowseButton1"));
 
-	InputStartOff = new wxTextCtrl(this, ID_INPUT_OFF, wxT(""), wxPoint(304, 56), wxSize(80, 19), wxTE_PROCESS_ENTER, wxDefaultValidator, wxT("InputStartOff"));
+	InputStartOff = new wxTextCtrl(this, ID_INPUT_OFF, wxT(""), wxPoint(304, 56), wxSize(80, 19), wxTE_PROCESS_ENTER, hexValidator, wxT("InputStartOff"));
 
 	WxStaticText3 = new wxStaticText(this, ID_WXSTATICTEXT3, wxT("Input file"), wxPoint(16, 104), wxDefaultSize, 0, wxT("WxStaticText3"));
 
@@ -164,7 +172,7 @@ void lz77Dlg::WxButton1Click(wxCommandEvent& event)
 {
 	// insert your code here
 	
-	lz77DlgApp::run(std::string(Inputfile->GetValue()),std::string(Outputfile->GetValue()),in_offset
+	lz77DlgApp::run(std::string(Inputfile->GetValue().char_str()),std::string(Outputfile->GetValue().char_str()),in_offset
 		,out_offset,size_to_compress,WxRadioBox1->GetSelection());
 }
 
@@ -186,11 +194,12 @@ void lz77Dlg::BrowseButton1Click(wxCommandEvent& event)
 {
 	// Gets input filename from user
 
-	WxOpenFileDialog1->ShowModal();
-	if	(WxOpenFileDialog1->GetFilename().length()<1)
-		return;
+	if(WxOpenFileDialog1->ShowModal()==wxID_OK){
+		if(WxOpenFileDialog1->GetFilename().length()<1)
+			return;
 
 	Inputfile->SetValue(WxOpenFileDialog1->GetPath());
+	}
 }
 
 /*
@@ -199,11 +208,12 @@ void lz77Dlg::BrowseButton1Click(wxCommandEvent& event)
 void lz77Dlg::BrowseButton2Click(wxCommandEvent& event)
 {
 	// insert your code here
-	WxOpenFileDialog2->ShowModal();
+	if(WxOpenFileDialog2->ShowModal()==wxID_OK){
 	if	(WxOpenFileDialog2->GetFilename().length()<1)
 		return;
 
 	Outputfile->SetValue(WxOpenFileDialog2->GetPath());
+	}
 }
 
 
@@ -216,13 +226,13 @@ void lz77Dlg::InputStartOffUpdated1(wxCommandEvent& event)
 	// insert your code here
 	
 	
-	wxRegEx match("(^(0x)?[0-9]|[a-f]|[A-F]+$)");
+	wxRegEx match(wxT("(^[%|$]?[0-9]|[a-f]|[A-F]+$)"));
 	bool results=false;
 	results=match.Matches(InputStartOff->GetValue());
 	if (results)
 	{
 		
-		InputStartOff->GetValue().ToULong(&in_offset,16);
+		InputStartOff->GetValue().ToULong(&in_offset,10);
 	}
 	else
 		in_offset=0;
@@ -234,13 +244,13 @@ void lz77Dlg::InputStartOffUpdated1(wxCommandEvent& event)
 void lz77Dlg::OutputOffUpdated(wxCommandEvent& event)
 {
 	// insert your code here
-	wxRegEx match("(^(0x)?[0-9]|[a-f]|[A-F]+$)");
+	wxRegEx match(wxT("(^[%|$]?[0-9]|[a-f]|[A-F]+$)"));
 	bool results=false;
 	results=match.Matches(OutputOff->GetValue());
 	if (results)
 	{
 		
-		OutputOff->GetValue().ToULong(&out_offset,16);
+		OutputOff->GetValue().ToULong(&out_offset,10);
 	}
 	else
 		out_offset=0;
@@ -253,13 +263,13 @@ void lz77Dlg::OutputOffUpdated(wxCommandEvent& event)
 void lz77Dlg::SizeUpdated(wxCommandEvent& event)
 {
 	// insert your code here
-	wxRegEx match("(^[0-9]+$)");
+	wxRegEx match(wxT("(^[0-9]+$)"));
 	bool results=false;
 	results=match.Matches(Size->GetValue());
 	if (results)
 	{
 		
-		Size->GetValue().ToULong(&in_offset,16);
+		Size->GetValue().ToULong(&size_to_compress,10);
 	}
 	else
 		size_to_compress=0;

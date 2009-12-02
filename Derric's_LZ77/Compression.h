@@ -15,13 +15,16 @@ using namespace std;
 
 const int SlidingWindow=4096;
 const int ReadAheadBuffer=18;
-const int MIN_MATCH=2;
+const int MIN_MATCH=3;//Minimum number of bytes that have to matched to go through with compression
 const int BlockSize=8;
 
+//To hold data about compressed bytes take 2 bytes or 16 bits
+//Length represents the top 4 bits and have to be between MIN_MATCH and 15=(2^4-1)
+//Offset represents the next 12 bits and have to be between 4096=(2^12-1) and MIN_MATCH
 struct length_offset
-{
-	int length;
-	int offset;
+{	
+	int length;//The number of bytes compressed
+	int offset;//How far back in sliding window where bytes that match the lookAheadBuffer is located
 
 };
 
@@ -32,6 +35,9 @@ vector<unsigned char> Uncompress(ifstream &infile, int offset, bool &compressibl
 
 length_offset Search(unsigned char* data, int position, int size);
 length_offset Search(string &data, int position,int size);
+length_offset window_search(const string& str_to_search, const string& str_to_look_for,int pos);
+int rfind(const string& str_to_search, const string& str_to_look_for,int pos);
+int compare(const char* str1, const char* str2, int n);
 
 /*Paramaters are
 infile - Name of the input file
@@ -81,10 +87,11 @@ vector<unsigned char> Compress(ifstream &infile, int offset,int filelength,int l
 		for(int i=0;i < BlockSize;i++)
 		{
 			length_offset searchResult=Search(filedata,position,length);
-			if(searchResult.length > MIN_MATCH)
+			//If the number of bytes to be compressed is at least the size of the Minimum match 
+			if(searchResult.length >= MIN_MATCH)
 			{
-				unsigned char temp=(unsigned char)((((searchResult.length - 3) & 0xF) << 4) + (((searchResult.offset - 1) >> 8) & 0xF));
-				tempBytes.push_back(temp);//Pushed length to compressed bytes yet to be writtem
+				unsigned char temp=(unsigned char)((((searchResult.length - MIN_MATCH) & 0xF) << 4) + (((searchResult.offset - 1) >> 8) & 0xF));
+				tempBytes.push_back(temp);//Pushed length to compressed bytes yet to be written
 				
 				temp=(unsigned char)((searchResult.offset-1) & 0xFF);
 				tempBytes.push_back(temp);//Offset is now stored at the end of compressed bytes not written
@@ -124,7 +131,7 @@ length_offset Search(unsigned char* data, int position, int size)
 {
 	length_offset results={0,0};
 	//Returns if in the first three or last three bytes of the file
-	if( (position <3)||( (size-position) <3) )
+	if( (position <MIN_MATCH)||( (size-position) <MIN_MATCH) )
 
 		return results;
 
@@ -187,7 +194,12 @@ length_offset Search(unsigned char* data, int position, int size)
 
 
 /*This search function is my own work and is no way affilated with any one else
-I use the string rfind function to drastically speed up the search function
+  I use the my own window_search function to drastically speed up the search function
+  Normally a search for one byte is matched, then two, then three, all the way up
+  to the size of the LookAheadBuffer. So I decided to skip the incremental search
+  and search for the entire LookAheadBuffer and if I don't find the bytes are equal I return
+  the next best match(which means if I look for 18 bytesand they are not found 18 characters did not match, and 17 characters did m
+
 */
 length_offset Search(string &data,int position, int size)
 {
@@ -200,38 +212,49 @@ length_offset Search(string &data,int position, int size)
 		return results;
 	}
 	//Returns if in the first three or last three bytes of the file
-	if( (position <3)||( (size-position) <3) )
+	if( (position <MIN_MATCH)||( (size-position) <MIN_MATCH) )
 		return results;
-
-	int search_position=0;
+	
+	int search_position=0;//Position where lookAheadBuffer starts-The Position is relative with the Sliding Window
 	int match_results=0;
 	string search_window;
-
-	int temp=(position - SlidingWindow);
-	if(temp>0)
-	{	search_window=data.substr(temp,SlidingWindow);
+	//LookAheadBuffer is ReadAheadBuffer Size if the are more bytes than ReadAheadBufferSize waiting
+	//to be compressed else the number of remaining bytes is the LookAheadBuffer
+	int lookAheadBuffer_len=((size-position)<ReadAheadBuffer) ? (size-position) :ReadAheadBuffer;
+	int sliding_buffer=(position - SlidingWindow);
+	if(sliding_buffer>0)
+	{	search_window=data.substr(sliding_buffer,SlidingWindow+lookAheadBuffer_len);
 		search_position=SlidingWindow;
 	}
 	else
 	{
-		search_window=data.substr(0,position);
+		search_window=data.substr(0,position+lookAheadBuffer_len);
 		search_position=position;
 	}
 	
 	
-	int matched=0; //Holds the number of bytes matched
+	int matched=2; //Holds the number of bytes matched
+	results=window_search(search_window,search_window.substr(search_position,lookAheadBuffer_len),search_position-MIN_MATCH+1);
+	results.offset=search_position-results.offset;
+	//A match has to be at least three bytes to be decompressed so their is no use in looking for a 
+	//match that is less than 3
+	/*
 	string str_to_match;
-
-	for (int i=0;matched<ReadAheadBuffer && (position+i)<size;i++)
+	str_to_match.append(1,data[position]);
+	str_to_match.append(1,data[position+1]);
+	
+	for (int i=2;matched<lookAheadBuffer_len;i++)
 	{
 		str_to_match.append(1,data[position+i]);
 		
-		if((temp=search_window.rfind(str_to_match,search_position-MIN_MATCH)) != string::npos)
+		
+
+		if((sliding_buffer=rfind(search_window,str_to_match,search_position-MIN_MATCH+1)) != string::npos)	
 		{
 			matched++;
-			//search_position++;
-			match_results=search_position-temp;
-			search_window.append(1,str_to_match[str_to_match.length()-1]);
+			
+			match_results=search_position-sliding_buffer;
+			
 			
 			
 		}
@@ -244,8 +267,8 @@ length_offset Search(string &data,int position, int size)
 
 	
 	results.length=matched;
-	results.offset=match_results;
-
+	results.offset=match_results;*/
+	results.offset=search_position-results.offset;
 	return results;
 }
 
@@ -292,21 +315,23 @@ vector<unsigned char> Uncompress(ifstream &infile, int offset, bool &compressibl
 			 {
 				 unsigned char first=infile.get();
 				 unsigned char second=infile.get();
-				 unsigned short position=(unsigned short) ((((first << 8) + second) & 0xFFF) + 1);
+				 //Offset to look for compressed data
+				 unsigned short offset=(unsigned short) ((((first << 8) + second) & 0xFFF) + 1);
 				 
 				 //Number of bytes to copy to output stream
-				 unsigned char num_to_copy=(unsigned char) (3+((first >> 4) & 0xF));
+				 unsigned char length=(unsigned char) (MIN_MATCH+((first >> 4) & 0xF));
 
-				 if(position > uncompPosition)//If the position to uncompressed data is passed t
+				 if(offset > uncompPosition)//If the offset to look for uncompressed is passed the current uncompresed data then the data is not compressed
 				 {
 					 compressible = false;
 					 return UncompressedBytes;
 				 }
 
-				 for(int j=0;j< num_to_copy;j++)
-					 UncompressedBytes[uncompPosition +j]=UncompressedBytes[uncompPosition-position+(j % position)];
+				 for(int j=0;j< length;j++)
+					 //UncompressedBytes[uncompPosition +j]=UncompressedBytes[uncompPosition-offset+(j % offset)];
+					 UncompressedBytes[uncompPosition +j]=UncompressedBytes[uncompPosition-offset+j];
 				 
-				 uncompPosition+=num_to_copy;
+				 uncompPosition+=length;
 			 }
 			 else
 			 {
@@ -330,3 +355,82 @@ vector<unsigned char> Uncompress(ifstream &infile, int offset, bool &compressibl
 	
 }
 
+//Returns the full length of string2 if they are equal else
+//Return the number of characters that were equal before they weren't equal
+int submatch(const char* str1,const char* str2,const int& len){
+	for(int i=0;i<len;++i)
+		if(str1[i]!=str2[i])
+			return i;
+	
+	return len;
+}
+
+/*
+Normally a search for one byte is matched, then two, then three, all the way up
+  to the size of the LookAheadBuffer. So I decided to skip the incremental search
+  and search for the entire LookAheadBuffer and if the function doesn't find the bytes are 
+  equal the function return the next best match(which means if the function look for 18 bytes and they are not found, return
+  the number of bytes that did match before it failed to match. The submatch is function returns the number of bytes that
+  were equal, which can result up to the bytes total length if both byte strings are equal.
+  
+*/
+length_offset window_search(const string& str_to_search, const string& str_to_look_for,int pos){
+	int size=str_to_search.length();
+	int n=str_to_look_for.length();
+	length_offset result={0,0};
+	int temp=0;
+	if(n>size)//If the string that is being looked for is bigger than the string that is being searched
+		return result;
+	
+	/*This makes sure that search for the str_to_look_for can be searched if an invalid position is given
+	  An invalid position occurs if the amount of characters to search in_str_to_search is less than the size
+	  of str_to_look_for. In other words there has to be at least n characters left in the string 
+	  to have a chance to find n characters*/
+	pos=min(size-n,pos);
+	do{	
+		temp=submatch(str_to_search.c_str()+pos,str_to_look_for.c_str(),n);
+		if(result.length<temp){
+			result.length=temp;
+			result.offset=pos;
+			}
+		if(result.length==n)
+			return result;
+		
+		//ReadAheadBuffer is the maximum size of a character match
+		
+						
+	
+	}while(pos-->0);
+	return result;
+
+}
+
+//Not in Use
+int rfind(const string& str_to_search, const string& str_to_look_for,int pos){
+	int size=str_to_search.length();
+	int n=str_to_look_for.length();
+	
+	int result=0;
+	if(n>size)//If the string that is being looked for is bigger than the string that is being searched
+		return string::npos;
+	
+	/*This makes sure that search for the str_to_look_for can be searched if an invalid position is given
+	  An invalid position occurs if the amount of characters to search in_str_to_search is less than the size
+	  of str_to_look_for. In other words there has to be at least n characters left in the string 
+	  to have a chance to find n characters*/
+	pos=min(size-n,pos);
+	do{	
+		if(compare(str_to_search.c_str()+pos,str_to_look_for.c_str(),n)==0)
+			return pos;
+	
+	}while(pos-->0);
+	return string::npos;
+
+}
+//Not in Use
+int compare(const char* str1, const char* str2, int n){
+	for(int i=0;i<n;++i)
+		if(str1[i]!=str2[i])
+			return -1;
+	return 0;
+}
