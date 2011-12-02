@@ -16,7 +16,7 @@ lz77Type11::lz77Type11(int ReadAheadBuffer,int MinimumOffset,int SlidingWindow,i
 	{}
 
 
-int lz77Type11::Compress(const wxString& inStr,const wxString& outStr,unsigned long offset,unsigned long length)
+enumCompressionResult lz77Type11::Compress(const wxString& inStr,const wxString& outStr,unsigned long offset,unsigned long length)
 {
 	wxFFile infile,outfile;
 	infile.Open(inStr,wxT("rb"));
@@ -29,7 +29,7 @@ int lz77Type11::Compress(const wxString& inStr,const wxString& outStr,unsigned l
 	if(bytesRead!=length){
 		delete []filedata;
 		filedata=NULL;
-		return -2;
+		return enumCompressionResult::COULD_NOT_READ_LENGTH_BYTES;
 	}
 
 
@@ -37,7 +37,7 @@ int lz77Type11::Compress(const wxString& inStr,const wxString& outStr,unsigned l
 	if(outfile.IsOpened()==false)	{
 		delete []filedata;
 		filedata=NULL;
-		return -1;
+		return enumCompressionResult::FILE_NOT_OPENED;
 	}
 	if (length>0xFFFFFF){// If length is greater than 24 bits or 16 Megs
 		int encodeFlag=0x11;
@@ -149,7 +149,7 @@ int lz77Type11::Compress(const wxString& inStr,const wxString& outStr,unsigned l
 	if((div4=outfile.Tell()%4) !=0 )
 		outfile.Write("\0",4-div4);
 	outfile.Close();
-	return 0;
+	return enumCompressionResult::SUCCESS;
 
 }
 
@@ -159,7 +159,7 @@ int lz77Type11::Compress(const wxString& inStr,const wxString& outStr,unsigned l
 	outStr-Output file to decompress
 	offset-position in infile to start de-compression
 */
-int lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned long offset)
+enumCompressionResult lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned long offset)
 {
 	wxFFile infile,outfile;
 	infile.Open(inStr,wxT("rb"));
@@ -172,7 +172,7 @@ int lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned
 	if(encodeFlag !=0x11)
 	{
 		infile.Close();
-		return 1;//Not compressible
+		return enumCompressionResult::FILE_NOT_COMPRESSED;//Not compressible
 	}
 	unsigned int filesize=0;
 	infile.Read(&filesize,3);
@@ -245,7 +245,7 @@ int lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned
 				 	delete []filedata;
 					uncompressedData=NULL;
 				 	filedata=NULL;
-				 	return 2;
+				 	return enumCompressionResult::INVALID_COMPRESSED_DATA;
 				 }
 
 				if((outputPtr - decoding.offset) < uncompressedData){//If the offset to look for uncompressed is passed the current uncompresed data then the data is not compressed
@@ -253,7 +253,7 @@ int lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned
 				 	delete []filedata;
 					uncompressedData=NULL;
 				 	filedata=NULL;
-				 	return 2;
+				 	return enumCompressionResult::INVALID_COMPRESSED_DATA;
 				 }
 				for(int j=0;j<decoding.length;++j)
 					outputPtr[j]=(outputPtr-decoding.offset)[j];
@@ -276,7 +276,7 @@ int lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned
 		delete []filedata;
 		uncompressedData=NULL;
 		filedata=NULL;
-		return -1;
+		return enumCompressionResult::FILE_NOT_OPENED;
 	}
 	outfile.Write(uncompressedData,filesize);
 	outfile.Close();
@@ -284,7 +284,7 @@ int lz77Type11::Decompress(const wxString& inStr,const wxString& outStr,unsigned
 	delete []filedata;
 	uncompressedData=NULL;
 	filedata=NULL;
-	return 0;
+	return enumCompressionResult::SUCCESS;
 	
 	
 }

@@ -4,8 +4,8 @@ COMPRESS:=lz77Type10 lz77Type11 lzBase
 HEADERS:=$(addsuffix .h, $(basename $(COMPRESS)))
 SRC:=$(FRAME) $(APP) $(COMPRESS) 
 LIBS:=`wx-config --libs`
-CXXFLAGS:=`wx-config --cxxflags`
-#CXXFLAGS:=-m32 -I/usr/lib/wx/include/gtk2-unicode-release-2.8 -I/usr/include/wx-2.8 -D_FILE_OFFSET_BITS=32 -D_LARGE_FILES -D__WXGTK__ -pthread
+CXXFLAGS:=-std=c++0x `wx-config --cxxflags`
+#CXXFLAGS:=-m32 -I/usr/lib/wx/include/gtk2-unicode-release-2.8 -I/usr/include/wx-2.8 -D_LARGE_FILES -D__WXGTK__ -pthread
 OBJFILES:=$(addsuffix .o, $(basename $(SRC)))
 EXEFILE:=lz77compressor
 

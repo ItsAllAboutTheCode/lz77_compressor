@@ -23,8 +23,3 @@ bool lz77App::OnInit(){
 	return true;
 }
  
-
-
-
-
-

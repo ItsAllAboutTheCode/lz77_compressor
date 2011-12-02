@@ -3,6 +3,7 @@
 
 #include "wx/string.h"
 #include "wx/ffile.h"
+#include "enum.h"
 typedef unsigned char byte;
 
 struct length_offset
@@ -11,7 +12,7 @@ struct length_offset
 	unsigned short offset;//How far back in sliding window where bytes that match the lookAheadBuffer is located
 
 };
-enum compressedType{
+enum class compressedType:int{
 		None=-1,
 		LZ00,
 		LZ01,
@@ -22,8 +23,8 @@ enum compressedType{
 class lzBase {
 public:
 	lzBase(int ReadAheadBuffer=18,int MinimumOffset=1,int SlidingWindow=4096,int MinimumMatch=3,int BlockSize=8);
-	virtual int Compress(const wxString& inStr, const wxString& outStr,unsigned long offset,unsigned long length)=0;
-	virtual int Decompress(const wxString& inStr, const wxString& outStr,unsigned long offset)=0;
+	virtual enumCompressionResult Compress(const wxString& inStr, const wxString& outStr,unsigned long offset,unsigned long length)=0;
+	virtual enumCompressionResult Decompress(const wxString& inStr, const wxString& outStr,unsigned long offset)=0;
 	bool FileIsCompressed(const wxString& inStr, byte encoding, unsigned long offset=0);
 	unsigned int decompressedFileLength(const wxString& inStr,unsigned long offset=0);
 	static compressedType FileType(const wxString& inStr,unsigned long offset=0);
