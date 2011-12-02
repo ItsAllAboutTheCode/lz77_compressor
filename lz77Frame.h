@@ -28,7 +28,7 @@
 #include <wx/ffile.h>
 #include <wx/fileconf.h>
 
-#define lz77_FRAME_STYLE wxTAB_TRAVERSAL| wxMAXIMIZE_BOX |wxCLOSE_BOX|wxRESIZE_BOX|wxMINIMIZE_BOX
+#define lz77_FRAME_STYLE wxTAB_TRAVERSAL| wxMAXIMIZE_BOX |wxCLOSE_BOX|wxRESIZE_BORDER|wxMINIMIZE_BOX
 
 class lz77Frame : public wxFrame
 {
@@ -56,9 +56,9 @@ class lz77Frame : public wxFrame
 		wxGridBagSizer *sizer;
 		wxFileConfig *configfile;
 		//Defines the numerical sizes
-	    	unsigned long sizeToCompress;
-	        unsigned long in_offset;
-	        unsigned long out_offset;
+	  long sizeToCompress;
+	  long in_offset;
+	  long out_offset;
 		
 		enum
 		{
@@ -80,25 +80,6 @@ class lz77Frame : public wxFrame
 			ID_MAIN_PANEL,
 			ID_algorithmOptions
 		};
-		enum{
-			COMPRESSED_FORMAT_NOT_SUPPORTED=-10,
-			COULD_NOT_READ_LENGTH_BYTES=-2,
-			FILE_NOT_OPENED=-1,
-			SUCCESS=0,
-			FILE_NOT_COMPRESSED,
-			INVALID_COMPRESSED_DATA,
-			UNCOMPRESSED_SIZE_INVALID
-		};
-		enum{
-			compressSelect=0,
-			decompressSelect=1
-		};
-		enum{
-			BEST_LZ77_TYPE_10=0,
-			EXACT_WII_LZ77_TYPE_10,
-			WII_LZ77_TYPE_11
-		};
-		
 		
 };
 

@@ -19,19 +19,19 @@ compressedType lzBase::FileType(const wxString& inStr,unsigned long offset){
 	compressedType filetype;
 	switch(encodeFlag){
 	 case 0x00:
-		filetype=LZ00;
+		filetype=compressedType::LZ00;
 		break;
 	 case 0x01:
-	 	filetype=LZ01;
+	 	filetype=compressedType::LZ01;
 	 	break;
 	 case 0x10:
-		filetype=LZ10;
+		filetype=compressedType::LZ10;
 		break;
 	 case 0x11:
-	 	filetype=LZ11;
+	 	filetype=compressedType::LZ11;
 	 	break;
 	 default:
-	 	filetype=None;
+	 	filetype=compressedType::None;
 	 	break;
 	}
 	return filetype;

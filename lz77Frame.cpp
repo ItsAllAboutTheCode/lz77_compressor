@@ -64,10 +64,10 @@ void lz77Frame::CreateGUIControls()
 	hexValidator.SetIncludes(includeList);
 
 	InfileDialog =  new wxFileDialog(lz77Panel, wxS("Choose a file"), DefaultInputDir, wxS(""), 
-		wxS("All Files|*|LZ77 Type 10 Files(*.cms;*.tpl)|*.cms;*.tpl|LZ77 Type 11 Files(*.one;*.onz)|*.one;*.onz"), wxOPEN);
+		wxS("All Files|*|LZ77 Type 10 Files(*.cms;*.tpl)|*.cms;*.tpl|LZ77 Type 11 Files(*.one;*.onz)|*.one;*.onz"), wxFD_OPEN);
 
 	OutfileDialog =  new wxFileDialog(lz77Panel, wxS("Choose a file"), DefaultOutputDir, wxS(""), 
-		wxS("All Files|*|LZ77 Type 10 Files(*.cms;*.tpl)|*.cms;*.tpl|LZ77 Type 11 Files(*.one;*.onz)|*.one;*.onz"), wxSAVE);
+		wxS("All Files|*|LZ77 Type 10 Files(*.cms;*.tpl)|*.cms;*.tpl|LZ77 Type 11 Files(*.one;*.onz)|*.one;*.onz"), wxFD_SAVE);
 
 	InputInfo = new wxStaticBox(lz77Panel, ID_INPUT_INFO, wxS("Input file info"), wxDefaultPosition, wxSize(-1, -1));
 	OutputInfo = new wxStaticBox(lz77Panel, ID_OutputInfo, wxS("Output file info"), wxDefaultPosition, wxSize(-1, -1));
@@ -195,41 +195,47 @@ void lz77Frame::onOk(wxCommandEvent& event)
 	}
 
 		
-	int result=0;
+	 enumCompressionResult result = enumCompressionResult::SUCCESS;
 	
-	if(compressOptions->GetSelection()==compressSelect){
+	if((enumCompressionMode)compressOptions->GetSelection()==enumCompressionMode::compressSelect){
 		switch(algorithmOptions->GetSelection()){
-		 case BEST_LZ77_TYPE_10:
-		 	{lz77Type10 lz77(18,2);
-		 	result=lz77.Compress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset,bytesToCompress);}
+		 case  enumCompressionType::BEST_LZ77_TYPE_10:
+		 	{
+		 		lz77Type10 lz77(18,2);
+		 				 	result=lz77.Compress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset,bytesToCompress);
+		 	}
 		 	break;
-		 case EXACT_WII_LZ77_TYPE_10:
-		 	{lz77Type10 lz77(18,2);
-		 	result=lz77.Compress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset,bytesToCompress);}
+		 case  enumCompressionType::EXACT_WII_LZ77_TYPE_10:
+		 	{
+		 		lz77Type10 lz77(18,2);
+		 		result=lz77.Compress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset,bytesToCompress);
+		 	}
 		 	break;
-		 case WII_LZ77_TYPE_11:
-		 	{lz77Type11 lz77;
-		 	result=lz77.Compress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset,bytesToCompress);}
+		 case  enumCompressionType::WII_LZ77_TYPE_11:
+		 	{
+		 		lz77Type11 lz77;
+		 		result=lz77.Compress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset,bytesToCompress);
+		 	}
 		 	break;
 		}
 		
 	}
 	else{
 		switch(lzBase::FileType(Inputfile->GetValue(),in_offset)){
-		 case LZ00:
-		 case LZ01:
-		 	result=COMPRESSED_FORMAT_NOT_SUPPORTED;
+		 case compressedType::LZ00:
+		 case compressedType::LZ01:
+		 	result= enumCompressionResult::COMPRESSED_FORMAT_NOT_SUPPORTED;
 		 	break;
-		 case LZ10:
+		 case compressedType::LZ10:
 		 	{lz77Type10 lz77;
 		 	result=lz77.Decompress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset);}
 		 	break;
-		 case LZ11:
+		 case compressedType::LZ11:
 		 	{lz77Type11 lz77;
 		 	result=lz77.Decompress(Inputfile->GetValue(),Outputfile->GetValue(),in_offset);	}
 		 	break;
-		 case None:
-		 	result=FILE_NOT_COMPRESSED;
+		 case compressedType::None:
+		 	result= enumCompressionResult::FILE_NOT_COMPRESSED;
 		 	break;
 		}
 				
@@ -238,28 +244,29 @@ void lz77Frame::onOk(wxCommandEvent& event)
 	
 
 	switch(result){
-	 case SUCCESS:
+	 case enumCompressionResult::SUCCESS:
 	 	wxMessageBox(wxS("Success"),wxS("Results"),wxOK,this);
 	 	break;
-	 case COULD_NOT_READ_LENGTH_BYTES:
+	 case enumCompressionResult::COULD_NOT_READ_LENGTH_BYTES:
 	 	wxMessageBox(wxString::Format(wxS("Could not read %u from input file"),bytesToCompress),wxS("Error"),wxOK,this);
 		break;
-	 case FILE_NOT_OPENED:
+	 case enumCompressionResult::FILE_NOT_OPENED:
 		wxMessageBox(wxS("Output file could not be opened"),wxS("Error"),wxOK,this);
 		break;
-	 case FILE_NOT_COMPRESSED:
+	 case enumCompressionResult::FILE_NOT_COMPRESSED:
 		wxMessageBox(wxS("Input file is not compressed"),wxS("Error"),wxOK,this);
 		break;
-	 case INVALID_COMPRESSED_DATA:
+	 case enumCompressionResult::INVALID_COMPRESSED_DATA:
 		wxMessageBox(wxS("Compressed Data is invalid"),wxS("Error"),wxOK,this);
 		break;
-	 case UNCOMPRESSED_SIZE_INVALID:
+	 case enumCompressionResult::UNCOMPRESSED_SIZE_INVALID:
 		wxMessageBox(wxS("Uncompressed file size is not correct"),wxS("Error"),wxOK,this);
 		break;
-	 case COMPRESSED_FORMAT_NOT_SUPPORTED:
+	 case enumCompressionResult::COMPRESSED_FORMAT_NOT_SUPPORTED:
 		wxMessageBox(wxS("Compressed format is not supported yet"),wxS("Info"),wxOK,this);
 		break;
-	
+	 default:
+		break;
 	 }
 		
 	
@@ -303,7 +310,7 @@ void lz77Frame::onStartOffset(wxCommandEvent& event)
 	bool results=false;
 	results=match.Matches(InputStartOff->GetValue());
 	if (results)
-		InputStartOff->GetValue().ToULong(&in_offset,16);
+		InputStartOff->GetValue().ToLong(&in_offset,16);
 	else
 		in_offset=0;
 }
@@ -315,7 +322,7 @@ void lz77Frame::onSize(wxCommandEvent& event)
 	bool results=false;
 	results=match.Matches(Size->GetValue());
 	if (results)
-		Size->GetValue().ToULong(&sizeToCompress,10);
+		Size->GetValue().ToLong(&sizeToCompress,10);
 	else
 		sizeToCompress=0;
 
